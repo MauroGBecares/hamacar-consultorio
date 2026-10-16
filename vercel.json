@@ -1,0 +1,14 @@
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist/hamacar/browser",
+  "rewrites": [{ "source": "/((?!assets/|workers/|app-config.json|.*\\.[a-zA-Z0-9]+$).*)", "destination": "/index.html" }],
+  "headers": [
+    { "source": "/app-config.json", "headers": [{ "key": "Cache-Control", "value": "no-store" }] },
+    { "source": "/(.*)", "headers": [
+      { "key": "X-Content-Type-Options", "value": "nosniff" },
+      { "key": "Referrer-Policy", "value": "no-referrer" },
+      { "key": "X-Frame-Options", "value": "DENY" },
+      { "key": "Permissions-Policy", "value": "camera=(), geolocation=(), microphone=(self)" }
+    ] }
+  ]
+}

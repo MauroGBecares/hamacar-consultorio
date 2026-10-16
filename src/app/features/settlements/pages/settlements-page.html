@@ -1,0 +1,171 @@
+<header class="page-heading">
+  <div>
+    <p class="eyebrow">Administración</p>
+    <h1>{{ session.isPartner() ? 'Liquidaciones' : 'Mis liquidaciones' }}</h1>
+    <p class="muted">
+      {{ session.isPartner() ? 'Gestión del espacio y del equipo' : session.user()?.fullName }}
+    </p>
+  </div>
+  <label
+    >Mes de referencia<input type="month" [ngModel]="cycle()" (ngModelChange)="setCycle($event)"
+  /></label>
+</header>
+<div class="toolbar">
+  <nav class="tabs" aria-label="Secciones de liquidaciones">
+    @for (name of tabs(); track name) {
+    <button [class.active]="tab() === name" (click)="setTab(name)">{{ name }}</button> }
+  </nav>
+  @if (session.isPartner()) {
+  <button class="button" (click)="exporting.set(true)">↓ Exportar Excel</button> }
+</div>
+@if (session.isPartner()) {
+<label class="owner-select"
+  >Profesional<select [ngModel]="owner()" (ngModelChange)="owner.set($event); attention.set('')">
+    <option value="">Todo el equipo</option>
+    @for (user of session.billingUsers(); track user.id) {
+    <option [ngValue]="user.id">{{ user.fullName }}</option>
+    }
+  </select></label
+>
+}
+<hm-resource-feedback
+  [loading]="service.workspaceResource.isLoading()"
+  [error]="service.workspaceResource.error()"
+  (retry)="service.workspaceResource.reload()"
+/>
+@if (attention()) {
+<div class="notice actions">
+  <span
+    >Mostrando {{ attention() === 'informed' ? 'transferencias por revisar de todos los ciclos' :
+    attention() === 'observed' ? 'liquidaciones para corregir de todos los ciclos' : attention() ===
+    'unincluded' ? 'cobros sin liquidar' : 'períodos anteriores sin cobrar' }}.</span
+  ><button class="text-button" (click)="attention.set('')">Quitar filtro</button>
+</div>
+} @if (!service.workspaceResource.error() && !service.workspaceResource.isLoading()) { @if (tab()
+=== 'Resumen') { @if (session.isPartner() && !owner()) {
+<hm-finance-dashboard [state]="state()" [cycle]="cycle()" (attention)="alert($event)" /> } @else {
+@if (personal(); as settlement) {
+<section class="finance-hero">
+  <div>
+    <p class="eyebrow">Liquidación de {{ month(cycle()) }}</p>
+    <h2>{{ money(total(settlement)) }}</h2>
+    <p>Vence el {{ date(due(cycle())) }}</p>
+    <span class="badge">{{ status(settlement) }}</span>
+  </div>
+  <div class="actions">
+    <button
+      class="button primary"
+      (click)="selectedSettlement.set({ id: settlement.id, step: session.isPartner() ? 'detail' : 'review' })"
+    >
+      {{ session.isPartner() ? 'Ver liquidación' : 'Completar liquidación' }}</button
+    ><button class="button" (click)="selectedSettlement.set({ id: settlement.id, step: 'detail' })">
+      Ver detalle
+    </button>
+  </div>
+</section>
+@if (pendingConcepts().length) {
+<button
+  class="notice callout"
+  (click)="selectedSettlement.set({ id: settlement.id, step: 'review' })"
+>
+  {{ pendingConcepts().length }} cobros listos para liquidar · Revisar e incluir →
+</button>
+} }
+<section class="panel">
+  <h2>{{ session.isPartner() ? 'Períodos del ciclo' : '¿Qué cobraste?' }}</h2>
+  <p class="muted">Cargá importes cobrados y el aporte manual para Hamacar.</p>
+  @for (period of visibleCurrentPeriods(); track period.id) {
+  <button class="list-row" (click)="selectedPeriod.set(period.id)">
+    <span class="grow"
+      ><strong>{{ period.patientName }}</strong
+      ><small
+        >{{ period.mode === 'Particular' ? 'Particular' : period.coverage }}{{ period.cud === 'Sí' ?
+        ' · CUD' : '' }}</small
+      ></span
+    ><span class="badge">{{ periodStatus(period) }}</span><span>›</span>
+  </button>
+  } @empty {
+  <p class="empty">No hay períodos en este ciclo.</p>
+  }<button class="text-button" (click)="setTab('Control de períodos')">
+    Revisar meses anteriores →
+  </button>
+</section>
+} } @if (tab() === 'Control de períodos') {
+<section class="panel">
+  <h2>Control de períodos</h2>
+  <p class="muted">
+    El mes de prestación conserva su estado aunque el cobro llegue después. El CUD no determina la
+    modalidad de pago.
+  </p>
+  @for (entry of periodGroups(); track entry[0]) {
+  <section class="period-group">
+    <h3>
+      {{ entry[1].patientName }}
+      <small>{{ session.professional(entry[1].professionalId).fullName }}</small>
+    </h3>
+    <div class="period-cells">
+      @for (period of entry[1].periods; track period.id) {
+      <button class="period-cell" (click)="selectedPeriod.set(period.id)">
+        <strong>{{ month(period.month) }}</strong
+        ><span class="badge">{{ periodStatus(period) }}</span
+        ><small>{{ period.mode === 'Particular' ? 'Particular' : period.coverage }}</small>
+      </button>
+      }
+    </div>
+  </section>
+  } @empty {
+  <p class="empty">No hay períodos con este filtro.</p>
+  }
+</section>
+} @if (tab() === 'Historial' || tab() === 'Profesionales' || (tab() === 'Resumen' &&
+session.isPartner() && !owner())) {
+<section class="panel">
+  <h2>{{ tab() === 'Historial' ? 'Historial de liquidaciones' : 'Estado del equipo' }}</h2>
+  <div class="tabs">
+    @for (filter of ['Todas', 'Confirmadas', 'Pendientes', 'Para corregir']; track filter) {
+    <button [class.active]="statusFilter() === filter" (click)="statusFilter.set(filter)">
+      {{ filter }}
+    </button>
+    }
+  </div>
+  @for (settlement of visibleBills(); track settlement.id) {
+  <button class="list-row" (click)="selectedSettlement.set({ id: settlement.id, step: 'detail' })">
+    <span class="grow"
+      ><strong>{{ session.professional(settlement.professionalId).fullName }}</strong
+      ><small
+        >{{ month(settlement.month) }} · {{
+        session.professional(settlement.professionalId).discipline }}</small
+      ></span
+    ><span class="amount-column"
+      ><b>{{ money(total(settlement)) }}</b
+      ><span class="badge" [class.warm]="status(settlement) === 'Para corregir'"
+        >{{ status(settlement) }}</span
+      ></span
+    ><span>›</span>
+  </button>
+  } @empty {
+  <p class="empty">No hay liquidaciones con este filtro.</p>
+  }
+</section>
+} } @if (!service.workspaceResource.isLoading() && !service.workspaceResource.error()) {
+<nav class="actions" aria-label="Páginas económicas">
+  <button class="button" [disabled]="pageIndex()===0" (click)="previous()">Anterior</button
+  ><span>Página {{pageIndex()+1}}</span
+  ><button class="button" [disabled]="!hasNext()" (click)="next()">Siguiente</button>
+</nav>
+} @if (selectedPeriod()) {
+<hm-period-dialog [periodId]="selectedPeriod()" (closed)="selectedPeriod.set('')" /> } @if
+(selectedSettlement(); as selected) {
+<hm-settlement-dialog
+  [settlementId]="selected.id"
+  [initialStep]="selected.step"
+  (closed)="selectedSettlement.set(null)"
+  (historyRequested)="openHistory($event)"
+/>
+} @if (exporting()) {
+<hm-export-dialog
+  [initialMonth]="cycle()"
+  [initialOwner]="owner()"
+  (closed)="exporting.set(false)"
+/>
+}

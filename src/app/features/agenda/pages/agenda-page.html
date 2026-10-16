@@ -1,0 +1,203 @@
+<header class="page-heading">
+  <div>
+    <p class="eyebrow">Organización del espacio</p>
+    <h1>Agenda</h1>
+  </div>
+  <button class="button primary" (click)="create()">＋ Nueva reserva</button>
+</header>
+<div class="toolbar">
+  <div class="tabs" aria-label="Vista de agenda">
+    <button
+      [class.active]="layout() === 'day'"
+      [attr.aria-pressed]="layout() === 'day'"
+      (click)="layout.set('day')"
+    >
+      Día</button
+    ><button
+      [class.active]="layout() === 'week'"
+      [attr.aria-pressed]="layout() === 'week'"
+      (click)="layout.set('week')"
+    >
+      Semana</button
+    ><button
+      [class.active]="layout() === 'month'"
+      [attr.aria-pressed]="layout() === 'month'"
+      (click)="layout.set('month')"
+    >
+      Mes
+    </button>
+  </div>
+  <div class="actions">
+    <button class="button" aria-label="Período anterior" (click)="shift(-1)">‹</button
+    ><input
+      type="date"
+      aria-label="Fecha de la agenda"
+      [ngModel]="selectedDay()"
+      (ngModelChange)="setDate($event)"
+    /><button class="button" aria-label="Período siguiente" (click)="shift(1)">›</button
+    ><button class="button" (click)="selectedDay.set(today)">Hoy</button>
+  </div>
+</div>
+<div class="form-grid filters">
+  <label
+    >Consultorio<select [ngModel]="roomFilter()" (ngModelChange)="roomFilter.set($event)">
+      <option [ngValue]="0">Todos</option>
+      @for (room of [1, 2, 3]; track room) {
+      <option [ngValue]="room">Consultorio {{ room }}</option>
+      }
+    </select></label
+  ><label
+    >Profesional<select [ngModel]="userFilter()" (ngModelChange)="userFilter.set($event)">
+      <option value="">Todo el equipo</option>
+      @for (user of session.users(); track user.id) {
+      <option [ngValue]="user.id">{{ user.fullName }}</option>
+      }
+    </select></label
+  >
+</div>
+<h2 class="agenda-heading">{{ heading() }}</h2>
+<hm-resource-feedback
+  [loading]="resource.isLoading()"
+  [error]="resource.error()"
+  (retry)="resource.reload()"
+/>
+@if (layout() === 'month') {
+<div class="month-grid">
+  @for (day of ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']; track day) {
+  <span>{{ day }}</span> } @for (day of days(); track day) {
+  <button
+    class="month-cell"
+    [class.outside]="day.slice(0,7) !== selectedDay().slice(0,7)"
+    [class.selected]="day === selectedDay()"
+    [attr.aria-pressed]="day === selectedDay()"
+    [attr.aria-label]="date(day) + ': ' + dayEvents(day).length + ' reservas'"
+    (click)="selectedDay.set(day)"
+  >
+    <strong>{{ +day.slice(8) }}</strong
+    ><small
+      >{{ dayEvents(day).length || '—' }}<span class="reservation-label"> reservas</span></small
+    >
+  </button>
+  }
+</div>
+<h2 class="agenda-heading">{{ date(selectedDay()) }}</h2>
+} @if (layout() === 'week') {
+<div class="week-grid">
+  @for (day of days(); track day) {
+  <section class="week-day">
+    <button class="text-button" (click)="selectedDay.set(day); layout.set('day')">
+      {{ weekday(day) }}
+    </button>
+    @for (event of dayEvents(day); track event.id + event.original) {
+    <button class="booking room-{{event.room}}" (click)="openDetail(event)">
+      <small>Consultorio {{ event.room }}</small><b>{{ event.from }}–{{ event.to }}</b
+      ><strong>{{ event.patientName || 'Ocupado' }}</strong><small>{{ event.professional }}</small>
+    </button>
+    } @empty { @if (!resource.isLoading() && !resource.error()) {
+    <p class="muted">Sin reservas</p>
+    } }
+  </section>
+  }
+</div>
+} @else {
+<div class="rooms-grid">
+  @for (room of rooms(); track room) {
+  <section class="panel">
+    <h2>Consultorio {{ room }}</h2>
+    <p class="muted">{{ dayEvents(selectedDay(), room).length }} reservas con este filtro</p>
+    @for (event of dayEvents(selectedDay(), room); track event.id + event.original) {
+    <button class="booking room-{{room}}" (click)="openDetail(event)">
+      <b>{{ event.from }}–{{ event.to }}</b><strong>{{ event.patientName || 'Ocupado' }}</strong
+      ><span>{{ event.professional }}</span
+      ><small>{{ frequency(event.every) }}{{ event.changed ? ' · Cambio puntual' : '' }}</small>
+    </button>
+    } @empty { @if (!resource.isLoading() && !resource.error()) {
+    <p class="empty">Sin reservas con este filtro.</p>
+    } }
+    <button class="text-button" (click)="create(room)">＋ Reservar consultorio {{ room }}</button>
+  </section>
+  }
+</div>
+}
+<p class="footer-note">
+  Horarios civiles de Argentina. La reserva no registra asistencia ni genera cobros.
+</p>
+@if (editing(); as edit) {
+<hm-booking-editor
+  [mode]="edit.mode"
+  [event]="edit.event"
+  [room]="edit.room"
+  [date]="selectedDay()"
+  (closed)="editing.set(null)"
+  (saved)="selectedDay.set($event); editing.set(null)"
+/>
+} @if (detail(); as event) {
+<hm-dialog [title]="event.patientName || 'Consultorio ocupado'" (closed)="closeDetail()">
+  <h2>{{ event.from }}–{{ event.to }}</h2>
+  <p>{{ date(event.date) }} · Consultorio {{ event.room }}</p>
+  <p>{{ event.professional }}</p>
+  <span class="badge">{{ frequency(event.every) }}</span> @if (canEdit(event)) { @if (cancelling())
+  {
+  <div class="notice">
+    <p>
+      {{ cancelling() === 'one' ? 'Se cancelará solo este encuentro.' : 'Se finalizará la repetición
+      desde esta fecha. El historial anterior se conserva.' }}
+    </p>
+    <button class="button primary" [disabled]="pending()" (click)="cancel()">
+      Confirmar cancelación</button
+    ><button class="button" (click)="cancelling.set(null)">Volver</button>
+  </div>
+  } @else {
+  <div class="stack actions-top">
+    <button class="button primary" (click)="edit('one')">Cambiar solo este encuentro</button>@if
+    (event.every) {
+    <button class="button" (click)="edit('future')">Cambiar desde esta fecha</button> }<button
+      class="button"
+      (click)="cancelling.set('one')"
+    >
+      Cancelar este encuentro</button
+    >@if (event.every && event.original >= today) {
+    <button class="text-button" (click)="cancelling.set('future')">
+      Finalizar repetición desde esta fecha
+    </button>
+    }
+  </div>
+  } } @else {
+  <p class="notice">
+    {{ event.date < today ? 'Este encuentro forma parte del historial.' : 'Solo la profesional a
+    cargo o una socia puede modificar esta reserva.' }}
+  </p>
+  } @if (event.editable) {
+  <details>
+    <summary>Historial de cambios</summary>
+    <hm-resource-feedback
+      [loading]="auditResource.isLoading()"
+      [error]="auditResource.error()"
+      (retry)="auditResource.reload()"
+    />
+    @for (entry of auditResource.hasValue() ? auditResource.value() : []; track entry.id) {
+    <p>{{ entry.action }} · {{ entry.actor }} · {{ entry.at }}</p>
+    } @empty { @if (!auditResource.isLoading() && !auditResource.error()) {
+    <p>Sin cambios registrados.</p>
+    } }
+    <nav class="actions" aria-label="Páginas del historial">
+      <button
+        class="button"
+        [disabled]="!auditHistory().length || auditResource.isLoading()"
+        (click)="auditPrevious()"
+      >
+        Anterior</button
+      ><button
+        class="button"
+        [disabled]="!auditResource.hasValue() || auditResource.value().length<50 || auditResource.isLoading()"
+        (click)="auditNext(auditResource.value().at(-1)?.id ?? '')"
+      >
+        Siguiente
+      </button>
+    </nav>
+  </details>
+  } @if (error()) {
+  <p class="error" role="alert">{{ error() }}</p>
+  }
+</hm-dialog>
+}

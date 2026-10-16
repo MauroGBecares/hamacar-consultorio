@@ -1,0 +1,86 @@
+{
+  "checkedAt": "2026-10-13T12:20:37.4160811Z",
+  "health": {
+    "patients": 0,
+    "profiles": 0,
+    "authUsers": 0,
+    "migrations": [
+      "20261008000100",
+      "20261008000200",
+      "20261008000300",
+      "20261008000400",
+      "20261008000500",
+      "20261008000600",
+      "20261008000700",
+      "20261008000800",
+      "20261008000900",
+      "20261009000100",
+      "20261009000200",
+      "20261009000300",
+      "20261009000400",
+      "20261009000500",
+      "20261009000600",
+      "20261009000700",
+      "20261009000800",
+      "20261009000900",
+      "20261009001000",
+      "20261009001100",
+      "20261013000100",
+      "20261013000200"
+    ],
+    "attachments": 0,
+    "privateBuckets": [
+      {
+        "id": "clinical-files",
+        "public": false,
+        "maxBytes": 10485760
+      },
+      {
+        "id": "receipts",
+        "public": false,
+        "maxBytes": 10485760
+      }
+    ],
+    "storageObjects": 0,
+    "cleanupSchedule": [
+      {
+        "name": "hamacar-cleanup-abandoned-uploads",
+        "active": true,
+        "schedule": "15 6 * * *"
+      }
+    ],
+    "cleanupRecentRuns": [
+      {
+        "status": "succeeded",
+        "end_time": "2026-10-13T03:15:00.268414-03:00",
+        "start_time": "2026-10-13T03:15:00.167655-03:00"
+      },
+      {
+        "status": "succeeded",
+        "end_time": "2026-10-12T03:15:00.252088-03:00",
+        "start_time": "2026-10-12T03:15:00.165671-03:00"
+      },
+      {
+        "status": "succeeded",
+        "end_time": "2026-10-11T03:15:00.266958-03:00",
+        "start_time": "2026-10-11T03:15:00.178966-03:00"
+      },
+      {
+        "status": "succeeded",
+        "end_time": "2026-10-10T03:15:00.277617-03:00",
+        "start_time": "2026-10-10T03:15:00.195376-03:00"
+      }
+    ],
+    "recentHttpStatuses": [
+      {
+        "created": "2026-10-13T09:17:23.925067-03:00",
+        "timed_out": false,
+        "status_code": 200
+      }
+    ],
+    "publicTablesWithoutRls": [],
+    "authenticatedTableWrites": [],
+    "cleanupCredentialPresent": true,
+    "anonymousBusinessFunctions": []
+  }
+}

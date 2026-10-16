@@ -1,0 +1,16 @@
+{
+  "date": "2026-10-09",
+  "environment": "Supabase remoto, plan Free, ca-central-1; medición SQL con clock_timestamp",
+  "fixture": {
+    "series": 1000,
+    "ended": 500,
+    "cancelledExceptions": 250,
+    "indefinite": 250,
+    "weekVisibleEvents": 250
+  },
+  "readWeekMs": 403.443,
+  "validateNewSeriesMs": 1345.864,
+  "exactStartBlocked": true,
+  "cleaned": "Rollback de todos los datos del conjunto dentro de la función de prueba",
+  "limitation": "Una ejecución sintética con horarios de un minuto. No representa capacidad garantizada ni concurrencia productiva."
+}

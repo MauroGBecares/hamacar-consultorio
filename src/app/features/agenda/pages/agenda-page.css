@@ -1,0 +1,112 @@
+.agenda-heading {
+  margin: 24px 0;
+}
+.rooms-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+.booking {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 16px;
+  width: 100%;
+  text-align: left;
+  border-radius: 10px;
+  background: #e8efdf;
+  border-left: 4px solid #88a46a;
+  margin: 14px 0;
+  overflow-wrap: anywhere;
+}
+.booking:hover {
+  filter: brightness(0.97);
+}
+.booking.room-2 {
+  background: #efe8f4;
+  border-color: #a28ab2;
+}
+.booking.room-3 {
+  background: #f6e9df;
+  border-color: #c59d7e;
+}
+.booking small {
+  font-size: 12px;
+}
+.booking b {
+  font-size: 13px;
+}
+.week-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 8px;
+}
+.week-day {
+  padding: 8px;
+  background: #fff;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+}
+.week-day .booking {
+  padding: 9px;
+}
+.month-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 5px;
+}
+.month-grid > span {
+  text-align: center;
+  font-size: 13px;
+}
+.month-cell {
+  display: flex;
+  min-height: 92px;
+  flex-direction: column;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 12px;
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.month-cell small {
+  font-size: 12px;
+}
+.month-cell.outside {
+  opacity: 0.5;
+}
+.month-cell.selected {
+  border: 2px solid var(--green);
+  background: #e9f0df;
+}
+.filters {
+  max-width: 650px;
+  margin-top: 20px;
+}
+@media (max-width: 1000px) {
+  .week-grid {
+    grid-template-columns: 1fr;
+  }
+  .week-day {
+    padding: 16px;
+  }
+  .rooms-grid {
+    grid-template-columns: 1fr;
+  }
+  .month-cell {
+    padding: 8px;
+  }
+  .reservation-label {
+    display: none;
+  }
+}
+@media (max-width: 480px) {
+  .month-grid {
+    gap: 3px;
+  }
+  .month-cell {
+    padding: 5px;
+    min-height: 68px;
+  }
+}

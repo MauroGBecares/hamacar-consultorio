@@ -1,0 +1,98 @@
+<hm-dialog title="Exportar pagos a Excel" (closed)="closed.emit()"
+  ><form (ngSubmit)="download()">
+    <label class="check"
+      ><input
+        type="checkbox"
+        name="all"
+        [ngModel]="filters().all"
+        (ngModelChange)="update({all: $event})"
+      />Todo el historial (ignorar filtros)</label
+    >
+    <fieldset [disabled]="filters().all">
+      <legend>Filtros combinados</legend>
+      <label
+        >Profesional<select
+          name="professional"
+          [ngModel]="filters().professionalId"
+          (ngModelChange)="update({professionalId: $event})"
+        >
+          <option value="">Todas</option>
+          @for (user of session.billingUsers(); track user.id) {
+          <option [ngValue]="user.id">{{ user.fullName }}</option>
+          }
+        </select></label
+      ><label
+        >Mes de liquidación<input
+          type="month"
+          name="month"
+          [ngModel]="filters().month"
+          (ngModelChange)="update({month: $event})"
+      /></label>
+      <div class="form-grid">
+        <label
+          >Transferencias desde<input
+            type="date"
+            name="from"
+            [ngModel]="filters().from"
+            (ngModelChange)="update({from: $event})" /></label
+        ><label
+          >Transferencias hasta<input
+            type="date"
+            name="to"
+            [ngModel]="filters().to"
+            (ngModelChange)="update({to: $event})"
+        /></label>
+      </div>
+      <label
+        >Estado<select
+          name="state"
+          [ngModel]="filters().state"
+          (ngModelChange)="update({state: $event})"
+        >
+          <option value="">Todos</option>
+          @for (state of states; track state) {
+          <option [value]="state">{{ labels[state] }}</option>
+          }
+        </select></label
+      >
+    </fieldset>
+    <button type="button" class="button" (click)="prepare()" [disabled]="resource.isLoading()">
+      Preparar informe completo
+    </button>
+    <hm-resource-feedback
+      [loading]="resource.isLoading()"
+      [error]="resource.error()"
+      (retry)="prepare()"
+    />
+    @if (resource.hasValue() && resource.value() && !resource.error()) {
+    <div class="notice" aria-live="polite">
+      <strong>{{ preview().transfers.length }} transferencias</strong>
+      <p>{{ money(preview().total) }} confirmados</p>
+    </div>
+    @for (payment of preview().transfers.slice(0, 8); track payment.id) {
+    <p class="note">
+      <b>{{ professionalName(payment.settlementId) }}</b
+      ><small
+        >{{ date(payment.date) }} · {{ money(payment.amountCents) }} · {{ labels[payment.state]
+        }}</small
+      >
+    </p>
+    } @if (preview().transfers.length > 8) {
+    <p>Y {{ preview().transfers.length - 8 }} más en el archivo.</p>
+    } } @if (preview().error || error()) {
+    <p class="error" role="alert">{{ preview().error || error() }}</p>
+    } @if (downloaded()) {
+    <p class="notice" role="status">Archivo generado.</p>
+    }
+    <button
+      class="button primary"
+      [disabled]="resource.isLoading() || !!resource.error() || !preview().transfers.length || !!preview().error"
+    >
+      Descargar Excel (.xlsx)
+    </button>
+    <p class="muted">
+      Dos hojas: transferencias y detalle por paciente. No incluye notas clínicas ni archivos de
+      comprobantes.
+    </p>
+  </form></hm-dialog
+>

@@ -1,0 +1,115 @@
+<hm-dialog
+  [title]="patient() ? 'Editar datos del paciente' : 'Agregar paciente'"
+  (closed)="!pending() && closed.emit()"
+>
+  <form (ngSubmit)="submit()">
+    <fieldset [disabled]="pending()">
+      <label
+        >Nombre y apellido<input
+          name="name"
+          [(ngModel)]="form.name"
+          (ngModelChange)="name.set($event); acknowledged = false"
+          minlength="3"
+          maxlength="200"
+          required
+      /></label>
+      <div class="form-grid">
+        <label
+          >Fecha de nacimiento<input
+            name="birth"
+            type="date"
+            [(ngModel)]="form.birthDate"
+            [max]="today" /></label
+        ><label
+          >Fecha de ingreso<input
+            name="admission"
+            type="date"
+            [(ngModel)]="form.admission"
+            [max]="today"
+            required
+        /></label>
+      </div>
+      @if (!patient()) {
+      <p class="notice">
+        Vas a quedar asignada a este paciente. Podés completar los demás datos después.
+      </p>
+      }
+      <details [open]="!!patient()">
+        <summary>Datos de contacto y atención</summary>
+        <div class="form-grid">
+          <label
+            >Familiar / Responsable<input
+              name="family"
+              [(ngModel)]="form.family"
+              maxlength="200" /></label
+          ><label
+            >Vínculo<input name="relation" [(ngModel)]="form.relation" maxlength="200"
+          /></label>
+        </div>
+        <label
+          >Teléfono de contacto<input
+            name="contact"
+            type="tel"
+            [(ngModel)]="form.contact"
+            maxlength="200" /></label
+        ><label>Escuela<input name="school" [(ngModel)]="form.school" maxlength="200" /></label
+        ><label
+          >Obra social / Prepaga<input
+            name="insurance"
+            [(ngModel)]="form.insurance"
+            maxlength="200"
+        /></label>
+        <label
+          >CUD<select name="cud" [(ngModel)]="form.cud">
+            <option>No informado</option>
+            <option>Sí</option>
+            <option>No</option>
+          </select></label
+        >
+        <label
+          >Diagnóstico<input name="diagnosis" [(ngModel)]="form.diagnosis" maxlength="200" /></label
+        ><label
+          >Motivo de consulta<textarea
+            name="reason"
+            [(ngModel)]="form.reason"
+            maxlength="2000"
+          ></textarea></label
+        ><label
+          >Derivado por<input name="referral" [(ngModel)]="form.referral" maxlength="200" /></label
+        ><label
+          >Reingreso<select name="reentry" [(ngModel)]="form.reentry">
+            <option>No</option>
+            <option>Sí</option>
+          </select></label
+        >
+      </details>
+      <hm-resource-feedback
+        [loading]="duplicateResource.isLoading()"
+        [error]="duplicateResource.error()"
+        (retry)="duplicateResource.reload()"
+      />
+      @if (duplicates().length) {
+      <div class="notice" aria-live="polite">
+        <strong>Puede que este paciente ya esté cargado.</strong>@for (match of duplicates(); track
+        $index) { @if (match.accessible) {
+        <p>
+          <a [routerLink]="['/pacientes', match.id]" (click)="closed.emit()"
+            >Abrir ficha de {{ match.name }}</a
+          >
+        </p>
+        } @else {
+        <p>Hay una coincidencia fuera de tus pacientes asignados. Consultá con una socia.</p>
+        } }<label class="check"
+          ><input type="checkbox" name="acknowledged" [(ngModel)]="acknowledged" />Revisé la
+          coincidencia y es otra persona.</label
+        >
+      </div>
+      } @if (error()) {
+      <p class="error" role="alert">{{ error() }}</p>
+      }
+      <button class="button primary" [disabled]="pending() || duplicateResource.isLoading()">
+        {{ pending() ? 'Guardando…' : patient() ? 'Guardar cambios' : 'Crear paciente' }}
+      </button>
+    </fieldset>
+  </form>
+</hm-dialog>

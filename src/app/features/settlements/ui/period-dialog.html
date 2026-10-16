@@ -1,0 +1,189 @@
+@if (period(); as period) {
+<hm-dialog
+  [title]="period.patientName + ' · ' + month(period.month)"
+  (closed)="!pending() && closed.emit()"
+>
+  <fieldset [disabled]="pending()">
+    <div class="actions">
+      <span class="badge">{{ status() }}</span
+      ><span class="badge lavender"
+        >{{ !period.mode ? 'Modalidad por definir' : period.mode === 'Particular' ? 'Particular' :
+        period.coverage }}</span
+      >@if (period.cud === 'Sí') { <span class="badge">CUD</span> }
+    </div>
+    <p class="muted">
+      {{ session.professional(period.professionalId).fullName }} · Mes de prestación, independiente
+      del mes de cobro.
+    </p>
+    @for (collection of collections(); track collection.id) {
+    <article class="notice">
+      @if (collection.cancelled) { <span class="badge">Anulado · No suma a los totales</span> }
+      <strong>Importe para Hamacar: {{ money(collection.contributionCents) }}</strong>
+      <p>
+        {{ date(collection.date) }} · {{ collection.settlementId ? 'Incluido en liquidación' :
+        'Pendiente de liquidar' }}
+      </p>
+      @if (collection.receivedCents !== null) {
+      <p>Cobrado: {{ money(collection.receivedCents) }}</p>
+      } @if (canCorrect(collection)) {
+      <div class="actions">
+        <button class="button" (click)="startCorrection(collection)">Corregir cobro</button
+        ><button
+          class="text-button"
+          (click)="correctionAction.set({kind:'annul',id:collection.id,version:collection.version}); reason=''"
+        >
+          Anular cobro
+        </button>
+        @if (collection.settlementId) {<button
+          class="text-button"
+          (click)="correctionAction.set({kind:'detach',id:collection.id,version:collection.version}); reason=''"
+        >
+          Retirar de la liquidación</button
+        >}
+      </div>
+      }
+    </article>
+    } @for (note of period.notes; track $index) {
+    <article class="note">
+      <p>{{ note.text }}</p>
+      <small>{{ note.author }} · {{ note.at }}</small>
+    </article>
+    } @if (editable() && (!period.complete || correcting())) {
+    <form (ngSubmit)="save()">
+      <p class="eyebrow">
+        {{ correcting() ? 'Corregir cobro conservando el original' : '1 · Cargar cobros' }}
+      </p>
+      @if (!period.mode) {<label
+        >Modalidad<select name="mode" [(ngModel)]="form.mode" required>
+          <option [ngValue]="undefined" disabled>Elegí una modalidad</option>
+          <option>Particular</option>
+          <option>Cobertura</option>
+        </select></label
+      >} @if (correcting()) {
+      <label
+        >Motivo obligatorio<textarea
+          name="correctionReason"
+          [(ngModel)]="reason"
+          required
+          maxlength="2000"
+        ></textarea>
+      </label>
+      } @if ((period.mode || form.mode) === 'Particular') {
+      <div class="form-grid">
+        <label
+          >Sesiones realizadas del período<input
+            type="number"
+            name="performed"
+            [(ngModel)]="form.performed"
+            min="0"
+            step="1"
+            required /></label
+        ><label
+          >Sesiones de este cobro<input
+            type="number"
+            name="sessions"
+            [(ngModel)]="form.sessionsPaid"
+            min="1"
+            step="1"
+            required
+        /></label>
+      </div>
+      <p class="muted">
+        Ya cargadas como cobradas: {{ period.sessionsPaid }}. Se sumarán las sesiones de este cobro.
+      </p>
+      } @else if ((period.mode || form.mode) === 'Cobertura') {
+      <label
+        >Monto recibido de la cobertura (ARS)<input
+          name="received"
+          inputmode="decimal"
+          [(ngModel)]="form.received"
+          placeholder="0,00"
+          required
+      /></label>
+      }
+      <label
+        >Fecha de cobro<input
+          type="date"
+          name="date"
+          [(ngModel)]="form.date"
+          [max]="today"
+          required /></label
+      ><label
+        >Importe que indicás para Hamacar (ARS)<input
+          name="contribution"
+          inputmode="decimal"
+          [(ngModel)]="form.contribution"
+          placeholder="0,00"
+          required
+      /></label>
+      <p class="muted">El importe es manual. No se calculan porcentajes ni tarifas por sesión.</p>
+      <label
+        >¿Queda algo pendiente de cobrar?<select name="complete" [(ngModel)]="form.complete">
+          <option [ngValue]="true">No, este período está cobrado</option>
+          <option [ngValue]="false">Sí, fue un cobro parcial</option>
+        </select></label
+      ><label
+        >Observación opcional<textarea
+          name="observation"
+          [(ngModel)]="form.observation"
+          maxlength="1500"
+        ></textarea></label
+      ><button class="button primary" [disabled]="!(period.mode || form.mode) || pending()">
+        {{ correcting() ? 'Confirmar corrección' : 'Confirmar cobro' }}
+      </button>
+    </form>
+    } @if (editable()) { @if (!collections().length && !period.noService) { @if
+    (!confirmNoService()) {
+    <button class="text-button" (click)="confirmNoService.set(true)">
+      Este mes no hubo prestaciones
+    </button>
+    } @else {
+    <div class="notice">
+      <p>¿Confirmás que no hubo prestaciones? No se generará un pendiente de cobro.</p>
+      <button class="button" (click)="noService()">Confirmar sin prestación</button
+      ><button class="button" (click)="confirmNoService.set(false)">Volver</button>
+    </div>
+    } } @if (period.noService) {<button
+      class="button"
+      (click)="correctionAction.set({kind:'reopen',id:period.id,version:period.version}); reason=''"
+    >
+      Reabrir Sin prestación</button
+    >} @if (correctionAction(); as action) {
+    <form class="notice" (ngSubmit)="correctState()">
+      <p>La operación conservará el original y quedará registrada en el historial.</p>
+      <label
+        >Motivo obligatorio<textarea
+          name="changeReason"
+          [(ngModel)]="reason"
+          required
+          maxlength="2000"
+        ></textarea></label
+      ><button class="button primary">
+        Confirmar {{ action.kind === 'reopen' ? 'reapertura' : action.kind === 'detach' ? 'retiro' :
+        'anulación' }}</button
+      ><button type="button" class="text-button" (click)="correctionAction.set(null)">
+        Volver
+      </button>
+    </form>
+    }
+    <details>
+      <summary>Agregar observación / todavía no cobré</summary>
+      <form (ngSubmit)="addNote()">
+        <label
+          >Observación<textarea
+            name="note"
+            [(ngModel)]="note"
+            required
+            maxlength="1500"
+          ></textarea></label
+        ><button class="button">Guardar observación</button>
+      </form>
+    </details>
+    } @if (error()) {
+    <p class="error" role="alert">{{ error() }}</p>
+    } @if (pending()) {
+    <p role="status">Guardando operación…</p>
+    }
+  </fieldset>
+</hm-dialog>
+}

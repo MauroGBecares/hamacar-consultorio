@@ -1,0 +1,148 @@
+<hm-dialog
+  [title]="kind() === 'shared' ? 'Nueva evolución compartida' : 'Nueva nota privada'"
+  (closed)="close()"
+>
+  <p class="notice">
+    {{ kind() === 'shared' ? 'Visible para el equipo después de publicar. El borrador es solo tuyo.'
+    : 'Separada de la historia compartida. Solo vos podés consultarla mientras tengas acceso al
+    paciente.' }}
+  </p>
+  <hm-resource-feedback
+    [loading]="resource.isLoading() && !initialized()"
+    [error]="resource.error()"
+    (retry)="resource.reload()"
+  />
+  @if (initialized()) {
+  <form (ngSubmit)="publish()">
+    <fieldset [disabled]="publishing()">
+      @if (correction()) {
+      <p class="notice">
+        Se publicará una rectificación vinculada al registro original, que se conserva.
+      </p>
+      <label
+        >Motivo de la rectificación<textarea
+          name="correctionReason"
+          [(ngModel)]="correctionReason"
+          required
+          maxlength="2000"
+        ></textarea>
+      </label>
+      }
+      <label
+        >Fecha del registro<input
+          type="date"
+          name="date"
+          [(ngModel)]="draft.date"
+          (ngModelChange)="persist()"
+          [max]="today"
+          required
+      /></label>
+      <label
+        >¿Qué querés registrar?<textarea
+          name="text"
+          [(ngModel)]="draft.text"
+          (ngModelChange)="persist()"
+          rows="7"
+          placeholder="Escribí lo relevante de este encuentro…"
+        ></textarea>
+      </label>
+      <section class="notice">
+        <strong>Dictado local · {{ voice.seconds() }} s</strong>
+        <p role="status">{{ voice.message() }}</p>
+        <div class="actions">
+          @if (!voice.busy()) {
+          <button
+            type="button"
+            class="button"
+            (click)="voice.state() === 'ready' ? voice.start() : voice.prepare()"
+          >
+            {{ voice.state() === 'ready' ? 'Dictar' : 'Activar dictado local' }}
+          </button>
+          } @if (voice.state() === 'recording') {
+          <button type="button" class="button" (click)="voice.pause()">Pausar</button> } @if
+          (voice.state() === 'paused') {
+          <button type="button" class="button" (click)="voice.resume()">Continuar</button> } @if
+          (voice.state() === 'recording' || voice.state() === 'paused') {
+          <button type="button" class="button primary" (click)="voice.finish()">
+            Finalizar dictado
+          </button>
+          } @if (voice.busy()) {
+          <button type="button" class="button" (click)="voice.cancel()">Cancelar dictado</button> }
+        </div>
+        <details>
+          <summary>Cómo se procesa</summary>
+          <p>
+            Whisper Tiny procesa el audio en tu dispositivo y lo descarta al terminar. La primera
+            preparación descarga el modelo público desde Hugging Face y jsDelivr. Revisá nombres,
+            términos y negaciones antes de publicar.
+          </p>
+        </details>
+      </section>
+      <div
+        class="file-drop"
+        (dragover)="$event.preventDefault()"
+        (drop)="$event.preventDefault(); addFiles($event.dataTransfer?.files ?? null)"
+      >
+        <label
+          >Informe o documentación<input
+            #fileInput
+            type="file"
+            accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+            multiple
+            (change)="addFiles(fileInput.files); fileInput.value = ''"
+        /></label>
+        <p class="muted">Hasta 5 archivos de 10 MB. También podés arrastrarlos aquí.</p>
+        <hm-attachment-list
+          [files]="draft.files"
+          [editable]="true"
+          (removed)="removeFile($event)"
+        />
+      </div>
+      @if (error()) {
+      <p class="error" role="alert">{{ error() }}</p>
+      } @if (confirmClose()) {
+      <div class="notice" role="alert">
+        <p>
+          Hay un dictado en curso. Al cerrar se descarta el audio y se conserva el texto del
+          borrador.
+        </p>
+        <button type="button" class="button" (click)="discardAudioAndClose()">
+          Descartar audio y cerrar</button
+        ><button type="button" class="button" (click)="confirmClose.set(false)">
+          Seguir editando
+        </button>
+      </div>
+      }
+      <footer class="actions">
+        <small role="status"
+          >{{ status() === 'saved' ? 'Borrador guardado' : status() === 'saving' ? 'Guardando
+          borrador…' : status() === 'conflict' ? 'Hay otra versión del borrador' : 'Cambios sin
+          guardar' }}</small
+        ><button
+          class="button primary"
+          [disabled]="voice.busy() || publishing() || status() === 'conflict'"
+        >
+          {{ kind() === 'shared' ? 'Publicar evolución' : 'Guardar nota privada' }}
+        </button>
+      </footer>
+    </fieldset>
+  </form>
+  @if (status() === 'conflict') {
+  <section class="notice">
+    <h3>Compará antes de guardar</h3>
+    <p>Tu texto sigue en el editor. Esta es la versión guardada en el servidor:</p>
+    <p class="preserve-text">{{ remoteDraft()?.text }}</p>
+    <button class="button" (click)="resolve(true)">Usar versión del servidor</button>
+    <button class="button" (click)="resolve(false)">Conservar mi edición sobre esta versión</button>
+  </section>
+  } @else if (status() === 'unsaved' && error()) {
+  <button class="button" (click)="retry()">Reintentar guardado</button>
+  <button class="text-button" (click)="closeWithPendingText()">
+    Cerrar y conservar el texto en esta pestaña
+  </button>
+  <p class="muted">
+    El texto pendiente se pierde si recargás o cerrás la pestaña. Volvé a seleccionar los archivos
+    que aún no se cargaron.
+  </p>
+  } }
+</hm-dialog>

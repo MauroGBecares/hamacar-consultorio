@@ -1,0 +1,261 @@
+@if (settlement(); as settlement) {
+<hm-dialog
+  [title]="session.professional(settlement.professionalId).fullName + ' · ' + month(settlement.month)"
+  (closed)="!pending() && closed.emit()"
+>
+  <fieldset [disabled]="pending() || service.workspaceResource.isLoading()">
+    <span class="badge">{{ status() }}</span>
+    <p class="muted">Vence el {{ date(due(settlement.month)) }}</p>
+    @if (step() === 'detail') {
+    <div class="summary-line">
+      <span>Importe cargado</span><strong>{{ money(total()) }}</strong>
+    </div>
+    <div class="summary-line"><span>Confirmado</span><b>{{ money(paid()) }}</b></div>
+    <div class="summary-line"><span>Pendiente de revisión</span><b>{{ money(reported()) }}</b></div>
+    <h3 class="section-title">¿A qué corresponde?</h3>
+    @for (entry of entries(); track entry.id) {
+    <article class="note">
+      <div class="summary-line">
+        <strong>{{ entry.patientName }}</strong><b>{{ money(entry.contributionCents) }}</b>
+      </div>
+      <small
+        >Prestación: {{ month(periodMonth(entry.periodId)) }} · {{ entry.mode === 'Particular' ?
+        'Particular' : entry.coverage }}</small
+      ><small
+        >Cobro: {{ date(entry.date) }} · {{ entry.mode === 'Particular' ? entry.sessionsPaid + '
+        sesiones cobradas' : 'Recibido ' + money(entry.receivedCents || 0) }}</small
+      >
+    </article>
+    } @empty {
+    <p class="empty">Sin conceptos cargados.</p>
+    } @for (note of settlement.notes; track $index) {
+    <article class="note">
+      <p>{{ note.text }}</p>
+      <small>{{ note.author }} · {{ note.at }}</small>
+    </article>
+    }
+    <h3 class="section-title">Transferencias</h3>
+    @for (payment of payments(); track payment.id) {
+    <article class="payment-card">
+      <span class="badge" [class.warm]="payment.state === 'observed'"
+        >{{ paymentLabels[payment.state] }}</span
+      >
+      <h3>{{ money(payment.amountCents) }} · {{ date(payment.date) }}</h3>
+      @if (service.receipt(payment); as receipt) { <hm-attachment-list [files]="[receipt]" />
+      } @for (note of payment.notes; track $index) {
+      <p class="note">{{ note.text }}<small>{{ note.author }} · {{ note.at }}</small></p>
+      } @if (payment.state === 'verified') {
+      <p class="muted">Confirmado por {{ payment.verifiedBy }} · {{ payment.verifiedAt }}</p>
+      } @if (payment.replacesId) {
+      <p class="muted">Reemplaza el intento {{ payment.replacesId }}.</p>
+      } @if (session.isPartner() && payment.state === 'informed') {
+      <div class="actions">
+        <button
+          class="button primary"
+          (click)="action.set({ type: 'verify', transferId: payment.id, version:payment.version }); error.set('')"
+        >
+          Confirmar recepción</button
+        ><button
+          class="button"
+          (click)="action.set({ type: 'observe', transferId: payment.id, version:payment.version }); error.set('')"
+        >
+          Pedir corrección
+        </button>
+      </div>
+      } @if (editable() && payment.state === 'observed') {
+      <button class="button" (click)="startTransfer(payment.id)">Corregir transferencia</button> }
+    </article>
+    } @empty {
+    <p class="empty">Todavía no se informó una transferencia.</p>
+    } @if (action(); as reviewAction) {
+    <form class="notice" (ngSubmit)="reviewPayment()">
+      @if (reviewAction.type === 'verify') {
+      <p>
+        ¿Confirmás que ingresaron <strong>{{ money(actionTransfer()?.amountCents || 0) }}</strong>?
+        Revisá el movimiento bancario además del comprobante. Se registrarán tu nombre y la fecha.
+      </p>
+      } @else {
+      <label
+        >¿Qué debe revisar la profesional?<textarea
+          name="reason"
+          [(ngModel)]="reason"
+          required
+          maxlength="1500"
+        ></textarea>
+      </label>
+      }
+      <div class="actions">
+        <button class="button primary">
+          {{ reviewAction.type === 'verify' ? 'Sí, confirmar recepción' : 'Enviar observación' }}</button
+        ><button type="button" class="button" (click)="action.set(null)">Volver</button>
+      </div>
+    </form>
+    } @if (editable()) {
+    <div class="actions">
+      @if (!payments().length) {
+      <button class="button" (click)="review()">Revisar conceptos</button> }<button
+        class="button primary"
+        (click)="startTransfer()"
+        [disabled]="!entries().length"
+      >
+        Registrar transferencia
+      </button>
+    </div>
+    } @if (session.isPartner()) {
+    <button class="text-button" (click)="historyRequested.emit(settlement.professionalId)">
+      Ver historial de {{ session.professional(settlement.professionalId).name }} →
+    </button>
+    }
+    <details>
+      <summary>Actividad de la liquidación</summary>
+      <hm-resource-feedback
+        [loading]="auditResource.isLoading()"
+        [error]="auditResource.error()"
+        (retry)="auditResource.reload()"
+      />
+      @for (entry of audit(); track entry.id) {
+      <p>{{ entry.action }} · {{ entry.actor }} · {{ entry.at }}</p>
+      } @empty { @if (!auditResource.isLoading() && !auditResource.error()) {
+      <p>Sin actividad registrada.</p>
+      } }
+      <nav class="actions" aria-label="Páginas del historial">
+        <button
+          class="button"
+          [disabled]="!auditHistory().length || auditResource.isLoading()"
+          (click)="auditPrevious()"
+        >
+          Anterior</button
+        ><button
+          class="button"
+          [disabled]="!auditResource.hasValue() || auditResource.value().length<50 || auditResource.isLoading()"
+          (click)="auditNext(auditResource.value().at(-1)?.id ?? '')"
+        >
+          Siguiente
+        </button>
+      </nav>
+    </details>
+    } @if (step() === 'review') {
+    <p class="eyebrow">2 · Revisar conceptos</p>
+    <p>
+      Seleccioná los cobros que vas a incluir. Los conceptos se congelan cuando se envía una
+      transferencia.
+    </p>
+    @for (entry of entries(); track entry.id) {
+    <div class="summary-line">
+      <span>{{ entry.patientName }} · Ya incluido</span><b>{{ money(entry.contributionCents) }}</b>
+    </div>
+    } @for (option of options(); track option.id) {
+    <label class="check note"
+      ><input
+        type="checkbox"
+        [checked]="selected().includes(option.id)"
+        (change)="toggle(option.id)"
+      /><span class="grow"
+        ><b>{{ option.patientName }}</b
+        ><small
+          >Prestación {{ month(periodMonth(option.periodId)) }} · Cobro {{ date(option.date)
+          }}</small
+        ></span
+      ><b>{{ money(option.contributionCents) }}</b></label
+    >
+    }
+    <div class="summary-line">
+      <strong>Total cargado</strong><strong>{{ money(reviewTotal()) }}</strong>
+    </div>
+    <form (ngSubmit)="prepare()">
+      <label
+        >Observación general<textarea
+          name="observation"
+          [(ngModel)]="observation"
+          maxlength="1500"
+        ></textarea>
+      </label>
+      <div class="actions">
+        <button class="button primary">Continuar a transferencia</button
+        ><button type="button" class="button" (click)="step.set('detail')">
+          Volver al detalle
+        </button>
+      </div>
+    </form>
+    } @if (step() === 'transfer') {
+    <p class="eyebrow">3 · Transferir</p>
+    @if (transfer.replacesId) {
+    <p class="notice">
+      Esta carga reemplaza el intento observado y conserva su comprobante e historial.
+    </p>
+    }
+    <form (ngSubmit)="sendTransfer()">
+      <label
+        >Fecha de transferencia<input
+          type="date"
+          name="date"
+          [(ngModel)]="transfer.date"
+          [max]="today"
+          required /></label
+      ><label
+        >Monto transferido (ARS)<input
+          name="amount"
+          inputmode="decimal"
+          [(ngModel)]="transfer.amount"
+          placeholder="0,00"
+          required
+      /></label>
+      <p class="muted">
+        Ingresá el importe efectivamente transferido. No se precarga ni se limita al importe de los
+        conceptos.
+      </p>
+      <label
+        >Comprobante obligatorio<input
+          #receipt
+          type="file"
+          accept=".pdf,.jpg,.jpeg,.png"
+          (change)="transfer.receipt = receipt.files?.item(0) || null" /></label
+      ><label
+        >O sacar una foto<input
+          #camera
+          type="file"
+          accept="image/jpeg,image/png"
+          capture="environment"
+          (change)="transfer.receipt = camera.files?.item(0) || null" /></label
+      >@if (transfer.receipt) {
+      <p class="notice">
+        ✓ {{ transfer.receipt.name }}
+        <button
+          type="button"
+          class="text-button"
+          (click)="transfer.receipt = null; receipt.value = ''; camera.value = ''"
+        >
+          Quitar archivo
+        </button>
+      </p>
+      }
+      <p class="muted">PDF, JPG o PNG · Hasta 10 MB.</p>
+      <label
+        >Observación opcional<textarea
+          name="observation"
+          [(ngModel)]="transfer.observation"
+          maxlength="1500"
+        ></textarea>
+      </label>
+      <div class="actions">
+        <button class="button primary">Enviar a revisión</button
+        ><button type="button" class="button" (click)="step.set('detail')">
+          Volver al detalle
+        </button>
+      </div>
+    </form>
+    } @if (error()) {
+    <p class="error" role="alert">{{ error() }}</p>
+    } @if (pending()) {
+    <p role="status">Guardando operación…</p>
+    }
+  </fieldset>
+</hm-dialog>
+} @else {
+<hm-dialog title="Liquidación" (closed)="!pending() && closed.emit()"
+  ><hm-resource-feedback
+    [loading]="service.workspaceResource.isLoading()"
+    [error]="service.workspaceResource.error()"
+    (retry)="service.workspaceResource.reload()"
+/></hm-dialog>
+}

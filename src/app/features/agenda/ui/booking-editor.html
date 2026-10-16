@@ -1,0 +1,117 @@
+<hm-dialog
+  [title]="mode() === 'new' ? 'Nueva reserva' : mode() === 'one' ? 'Cambiar este encuentro' : 'Cambiar desde esta fecha'"
+  (closed)="!pending() && closed.emit()"
+>
+  <form (ngSubmit)="submit()">
+    <fieldset [disabled]="pending()">
+      <label
+        >Profesional<select
+          name="professional"
+          [ngModel]="professionalId()"
+          (ngModelChange)="selectProfessional($event)"
+          [disabled]="!session.isPartner() || !!event()"
+        >
+          @for (user of session.activeUsers(); track user.id) { @if (session.isPartner() || user.id
+          === session.user()?.id) {
+          <option [ngValue]="user.id">{{ user.fullName }}</option>
+          } }
+        </select></label
+      >
+      @if (!event()) {
+      <label
+        >Buscar paciente<input
+          name="patientSearch"
+          [ngModel]="patientSearch()"
+          (ngModelChange)="searchPatients($event)"
+      /></label>
+      <hm-resource-feedback
+        [loading]="patientResource.isLoading()"
+        [error]="patientResource.error()"
+        (retry)="patientResource.reload()"
+      />
+      }
+      <label
+        >Paciente<select
+          name="patient"
+          [(ngModel)]="form.patientId"
+          [disabled]="!!event()"
+          required
+        >
+          <option value="" disabled>Elegí un paciente</option>
+          @if (event(); as current) {
+          <option [ngValue]="current.patientId">{{ current.patientName }}</option>
+          } @for (patient of patientOptions(); track patient.id) {
+          <option [ngValue]="patient.id">{{ patient.name }}</option>
+          }
+        </select></label
+      >
+      @if (!event()) {
+      <nav class="actions" aria-label="Páginas de pacientes">
+        <button
+          type="button"
+          class="text-button"
+          [disabled]="!patientHistory().length || patientResource.isLoading()"
+          (click)="previousPatients()"
+        >
+          Anteriores
+        </button>
+        <button
+          type="button"
+          class="text-button"
+          [disabled]="!patientResource.hasValue() || patientResource.value().length < 50 || patientResource.isLoading()"
+          (click)="nextPatients()"
+        >
+          Siguientes
+        </button>
+      </nav>
+      }
+      <label
+        >{{ mode() === 'one' ? 'Fecha del encuentro' : 'Primera fecha del horario' }}<input
+          type="date"
+          name="start"
+          [(ngModel)]="form.start"
+          [min]="today"
+          required
+      /></label>
+      <div class="form-grid">
+        <label>Desde<input type="time" name="from" [(ngModel)]="form.from" required /></label
+        ><label>Hasta<input type="time" name="to" [(ngModel)]="form.to" required /></label>
+      </div>
+      <label
+        >Consultorio<select name="room" [(ngModel)]="form.room">
+          @for (room of [1, 2, 3]; track room) {
+          <option [ngValue]="room">Consultorio {{ room }}</option>
+          }
+        </select></label
+      >
+      @if (mode() !== 'one') {
+      <label
+        >Frecuencia<select name="every" [(ngModel)]="form.every">
+          <option [ngValue]="0">Solo esta vez</option>
+          <option [ngValue]="7">Semanal · cada 7 días</option>
+          <option [ngValue]="14">Quincenal · cada 14 días</option>
+        </select></label
+      >
+      @if (form.every) {
+      <label
+        >Última fecha (opcional)<input
+          type="date"
+          name="until"
+          [(ngModel)]="form.until"
+          [min]="form.start"
+      /></label>
+      } } @if (mode() === 'future') {
+      <label class="check notice"
+        ><input type="checkbox" name="acknowledged" [(ngModel)]="acknowledged" />Confirmo que el
+        nuevo horario reemplaza las repeticiones y excepciones futuras desde la primera fecha
+        elegida. Se conserva el historial anterior.</label
+      >
+      } @if (error()) {
+      <p class="error" role="alert">{{ error() }}</p>
+      }
+      <button class="button primary" [disabled]="!form.patientId || pending()">
+        {{ mode() === 'new' ? 'Confirmar reserva' : 'Guardar cambio' }}
+      </button>
+    </fieldset>
+  </form>
+</hm-dialog>

@@ -1,0 +1,98 @@
+@if (session.locked()) { <hm-login-page /> }
+<div [hidden]="session.locked()" [inert]="session.locked()">
+  <a class="skip-link" href="#main" (click)="skip($event)">Saltar al contenido</a>
+  <aside class="sidebar">
+    <a routerLink="/inicio" class="brand"
+      ><img src="assets/logo-hamacar-white-color.svg" alt="Hamacar" width="164"
+    /></a>
+    <p class="brand-sub">ESPACIO INTERDISCIPLINARIO</p>
+    <nav aria-label="Navegación principal">
+      @for (item of navigation; track item.path) {
+      <a [routerLink]="item.path" routerLinkActive="active" ariaCurrentWhenActive="page"
+        ><span aria-hidden="true">{{ item.icon }}</span>{{ item.name }}</a
+      >
+      }
+    </nav>
+    <p class="side-note">Un espacio para<br />acompañar en equipo.</p>
+    <div class="user">
+      <span class="avatar">{{ initials(session.user()?.fullName || '') }}</span
+      ><span
+        >{{ session.user()?.name }}<small
+          >{{ session.isPartner() ? 'Socia · Gestión' : 'Profesional' }}</small
+        ></span
+      >
+    </div>
+  </aside>
+  <div class="shell">
+    <header class="topbar">
+      <button class="search-launch" (click)="query.set(''); searchOpen.set(true)">
+        <span aria-hidden="true">⌕</span> Buscar paciente <kbd>Ctrl K</kbd>
+      </button>
+      <div class="actions">
+        <span class="date-badge">{{ currentDate() }}</span
+        ><span class="user-name">{{ session.user()?.name }}</span
+        ><button class="text-button" (click)="passwordDialog.set(true)">Contraseña</button
+        ><button class="text-button" (click)="logout()">Salir</button>
+      </div>
+    </header>
+    <main id="main" tabindex="-1">
+      @if (session.warning()) {
+      <p class="notice" role="alert">
+        Tu sesión se bloqueará por inactividad en menos de dos minutos. Interactuá para continuar.
+      </p>
+      }
+      <router-outlet />
+    </main>
+  </div>
+</div>
+@if (searchOpen() && !session.locked()) {
+<hm-dialog title="Buscar paciente" (closed)="searchOpen.set(false)"
+  ><label
+    >Nombre o apellido<input
+      type="search"
+      [ngModel]="query()"
+      (ngModelChange)="query.set($event)"
+      autofocus /></label
+  ><hm-resource-feedback
+    [loading]="searchResource.isLoading()"
+    [error]="searchResource.error()"
+    (retry)="searchResource.reload()"
+  />
+  @for (patient of results(); track patient.id) {
+  <a class="list-row" [routerLink]="['/pacientes', patient.id]" (click)="searchOpen.set(false)"
+    ><span class="avatar">{{ initials(patient.name) }}</span
+    ><span>{{ patient.name }}<small>{{ patient.status }}</small></span></a
+  >
+  } @empty { @if (!searchResource.isLoading() && !searchResource.error()) {
+  <p class="empty">No encontramos pacientes asignados con ese nombre.</p>
+  } }</hm-dialog
+>
+} @if (passwordDialog() && !session.locked()) {
+<hm-dialog title="Cambiar contraseña" (closed)="!passwordPending() && passwordDialog.set(false)"
+  ><form (ngSubmit)="changePassword()">
+    <fieldset [disabled]="passwordPending()">
+      <label
+        >Nueva contraseña<input
+          type="password"
+          name="newPassword"
+          [(ngModel)]="password"
+          autocomplete="new-password"
+          minlength="12"
+          required /></label
+      ><label
+        >Repetir contraseña<input
+          type="password"
+          name="repeatPassword"
+          [(ngModel)]="passwordRepeat"
+          autocomplete="new-password"
+          minlength="12"
+          required /></label
+      >@if(passwordError()){
+      <p class="error" role="alert">{{passwordError()}}</p>
+      }<button class="button primary">
+        {{passwordPending()?'Guardando…':'Guardar contraseña'}}
+      </button>
+    </fieldset>
+  </form></hm-dialog
+>
+}

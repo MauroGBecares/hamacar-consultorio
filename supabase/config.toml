@@ -1,0 +1,14 @@
+# CLI deployment configuration. This project uses the hosted production database.
+# Remote Auth settings are managed explicitly; do not push local defaults to production.
+project_id = "hamacar"
+
+# Each function checks the caller itself, including the application session and RLS.
+# Cleanup accepts only its dedicated token held by the scheduled server job.
+[functions.finalize-upload]
+verify_jwt = false
+
+[functions.download-file]
+verify_jwt = false
+
+[functions.cleanup-uploads]
+verify_jwt = false

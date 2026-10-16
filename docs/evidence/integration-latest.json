@@ -1,0 +1,25 @@
+{
+  "run": "261cfc98-047f-4cfb-a9c1-77448e46f05b",
+  "date": "2026-10-13T12:20:02.941Z",
+  "checks": [
+    "Auth real, perfiles inicialmente inactivos, registro público y edición de roles bloqueados",
+    "RLS de pacientes y notas entre dos profesionales y dos socias; borradores versionados, idempotencia y rectificación",
+    "Storage privado, validación real de PNG, finalización repetida, descargas y sustituciones no autorizadas",
+    "Agenda concurrente, intervalos adyacentes, recurrencia indefinida, excepciones conservadas, archivo y reglas D3/D4",
+    "Primer cobro repetido y modalidad concurrente sin duplicación ni mezcla",
+    "D1/D2, corrección auditada, sesiones recalculadas, transferencia libre, retiro concurrente, revisión simultánea y reapertura",
+    "Cambio de contraseña y recuperación administrativa sin SMTP, con revocación de sesiones",
+    "Paginación, revisión global de exportación, indicadores, expiración en servidor y baja de perfil",
+    "Limpieza autenticada retira cargas abandonadas y conserva archivos referenciados",
+    "Historial con más de 50 liquidaciones, cursores sin duplicados, consultas acotadas e importes enteros",
+    "Navegador: ingreso real, ruta protegida, restauración y salto al contenido sin recarga",
+    "Navegador: borrador persistido tras recargar, texto conservado sin red y publicación confirmada",
+    "Navegador: bloqueo cierra diálogos privados y reautenticación conserva el borrador de la autora",
+    "Navegador: edición de ficha y reserva guardadas y recuperadas tras recarga",
+    "Navegador: cobro, transferencia de importe libre, comprobante validado y descarga privada",
+    "Navegador: historial económico, cambio de identidad, panel de socias y descarga Excel"
+  ],
+  "failure": null,
+  "cleaned": true,
+  "cleanupFailure": null
+}

@@ -1,0 +1,176 @@
+<a class="text-button" routerLink="/pacientes">← Volver a pacientes</a>
+<hm-resource-feedback
+  [loading]="resource.isLoading()"
+  [error]="resource.error()"
+  (retry)="resource.reload()"
+/>
+@if (patient(); as patient) {
+<header class="patient-heading">
+  <p class="eyebrow">Recorrido del paciente · Período 1</p>
+  <h1>{{ patient.name }}</h1>
+  <p>
+    {{ age(patient.birthDate, today) }} · <span class="badge">{{ patient.status }}</span> · Ingreso
+    {{ date(patient.admission) }}
+  </p>
+  <p>
+    {{ patient.school || 'Escuela sin informar' }} · {{ patient.insurance || 'Cobertura sin
+    informar' }} · CUD: {{ patient.cud }}
+  </p>
+</header>
+<div class="actions">
+  @if (patient.status !== 'Archivado') {
+  <button class="button" (click)="dialog.set('edit')">Editar datos</button> }<button
+    class="button"
+    (click)="dialog.set('audit')"
+  >
+    Historial de cambios</button
+  >@if (session.isPartner()) {
+  <button class="button" (click)="dialog.set('management')">Equipo y estado</button> }
+</div>
+@if (nextEvent(); as event) {
+<a class="notice next-booking" routerLink="/agenda" [queryParams]="{ date: event.date }"
+  ><small>Próximo horario</small
+  ><strong>{{ date(event.date) }} · {{ event.from }} · Consultorio {{ event.room }}</strong
+  ><span>{{ event.professional }} · Ver agenda →</span></a
+>
+} @else if (!next.isLoading() && !next.error()) {
+<a class="notice next-booking" routerLink="/agenda">Agenda · Sin próximos horarios registrados →</a>
+}
+<nav class="tabs" aria-label="Secciones del paciente">
+  @for (name of tabs; track name) {
+  <button
+    [class.active]="tab() === name"
+    [attr.aria-pressed]="tab() === name"
+    (click)="tab.set(name)"
+  >
+    {{ name }}
+  </button>
+  }
+</nav>
+@switch (tab()) { @case ('Resumen') {
+<div class="detail-grid">
+  <div class="stack">
+    <section class="panel">
+      <h2>Datos del paciente</h2>
+      <dl class="definition">
+        <div>
+          <dt>Fecha de nacimiento</dt>
+          <dd>{{ patient.birthDate ? date(patient.birthDate) : 'No informado' }}</dd>
+        </div>
+        <div>
+          <dt>Diagnóstico</dt>
+          <dd>{{ patient.diagnosis || 'No informado' }}</dd>
+        </div>
+        <div>
+          <dt>Escuela</dt>
+          <dd>{{ patient.school || 'No informado' }}</dd>
+        </div>
+        <div>
+          <dt>Obra social / Prepaga</dt>
+          <dd>{{ patient.insurance || 'No informado' }}</dd>
+        </div>
+        <div>
+          <dt>Derivado por</dt>
+          <dd>{{ patient.referral || 'No informado' }}</dd>
+        </div>
+        <div>
+          <dt>Reingreso</dt>
+          <dd>{{ patient.reentry }}</dd>
+        </div>
+      </dl>
+      <h3>Motivo de consulta</h3>
+      <p class="preserve-text">{{ patient.reason || 'No informado' }}</p>
+    </section>
+    <hm-records-panel
+      [patientId]="patient.id"
+      [limit]="2"
+      [readonly]="patient.status === 'Archivado'"
+    />
+  </div>
+  <aside class="stack">
+    <section class="panel">
+      <h2>Equipo profesional</h2>
+      @for (user of team(); track user.id) {
+      <p><strong>{{ user.fullName }}</strong><small>{{ user.discipline }}</small></p>
+      }
+    </section>
+    <section class="panel">
+      <h2>Familia / Responsables</h2>
+      <p>{{ patient.family || 'No informado' }}</p>
+      <p>{{ patient.relation }}</p>
+      <p>{{ patient.contact || 'Contacto no informado' }}</p>
+    </section>
+    <section class="panel lavender">
+      <h3>Mis notas profesionales</h3>
+      <p>Separadas de la historia compartida.</p>
+      <button class="text-button" (click)="tab.set('Mis notas')">Ver mis notas →</button>
+    </section>
+  </aside>
+</div>
+} @case ('Historia') {
+<hm-records-panel [patientId]="patient.id" [readonly]="patient.status === 'Archivado'" />
+<p class="notice">Ingreso a Hamacar: {{ date(patient.admission) }} · Período de atención 1.</p>
+} @case ('Documentos') {
+<hm-records-panel
+  [patientId]="patient.id"
+  [documentsOnly]="true"
+  [readonly]="patient.status === 'Archivado'"
+/>
+} @case ('Equipo') {
+<section class="panel">
+  <h2>Equipo actual</h2>
+  @for (user of team(); track user.id) {
+  <div class="list-row">
+    <span><strong>{{ user.fullName }}</strong><small>{{ user.discipline }}</small></span>
+  </div>
+  }
+</section>
+} @case ('Mis notas') {
+<hm-records-panel
+  [patientId]="patient.id"
+  visibility="private"
+  [readonly]="patient.status === 'Archivado'"
+/>
+} } @if (dialog() === 'edit') {
+<hm-patient-form [patient]="patient" (closed)="dialog.set(null)" (saved)="dialog.set(null)" /> } @if
+(dialog() === 'management') {
+<hm-patient-management [patient]="patient" (closed)="dialog.set(null)" (saved)="dialog.set(null)" />
+} @if (dialog() === 'audit') {
+<hm-dialog title="Historial de cambios" (closed)="dialog.set(null)"
+  ><hm-resource-feedback
+    [loading]="audit.isLoading()"
+    [error]="audit.error()"
+    (retry)="audit.reload()"
+  />@if (audit.hasValue()) { @for (entry of audit.value(); track entry.id) {
+  <article class="timeline-item">
+    <strong>{{ entry.action }}</strong>
+    <p class="muted">{{ entry.actor }} · {{ entry.at }}</p>
+    @for (change of entry.changes; track $index) {
+    <p>{{ change.field }}: {{ change.before || 'Sin datos' }} → {{ change.after }}</p>
+    }
+  </article>
+  } @empty {
+  <p class="empty">No hay cambios registrados en este paciente.</p>
+  } }
+  <nav class="actions" aria-label="Páginas del historial">
+    <button
+      class="button"
+      [disabled]="!auditHistory().length || audit.isLoading()"
+      (click)="auditPrevious()"
+    >
+      Anterior</button
+    ><button
+      class="button"
+      [disabled]="!audit.hasValue() || audit.value().length<50 || audit.isLoading()"
+      (click)="auditNext(audit.value().at(-1)?.id ?? '')"
+    >
+      Siguiente
+    </button>
+  </nav></hm-dialog
+>
+} } @else { @if (!resource.isLoading() && !resource.error()) {
+<section class="panel">
+  <h1>Ficha no disponible</h1>
+  <p>El paciente no existe o ya no está asignado a tu equipo.</p>
+</section>
+} }

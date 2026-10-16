@@ -1,0 +1,124 @@
+.login {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: 100dvh;
+}
+.identity {
+  background: #183d32;
+  color: #edf3df;
+  padding: clamp(28px, 5vw, 80px);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 70px;
+  position: relative;
+  overflow: hidden;
+}
+.identity:after {
+  content: '';
+  position: absolute;
+  inset: auto -30% 18% 15%;
+  height: 250px;
+  border: 1px solid #9cbc7733;
+  border-top: 0;
+  border-radius: 50%;
+  transform: rotate(-18deg);
+  pointer-events: none;
+}
+.identity h1 {
+  font-size: clamp(36px, 4vw, 64px);
+  line-height: 1.15;
+  letter-spacing: -2px;
+  font-weight: 500;
+}
+.identity em {
+  font-style: normal;
+  color: #d7edb2;
+}
+.identity .eyebrow,
+.identity p {
+  color: #bbcfb7;
+}
+.identity img {
+  max-width: 75%;
+  height: auto;
+}
+.access {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 28px;
+}
+.access form {
+  width: 100%;
+  max-width: 430px;
+}
+.access h2 {
+  font-size: 34px;
+  margin: 8px 0;
+}
+.access form > p {
+  margin-bottom: 25px;
+}
+.password {
+  position: relative;
+}
+.password input {
+  padding-right: 70px;
+}
+.password button {
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  min-height: 40px;
+  font-size: 13px;
+  color: var(--green);
+}
+.submit {
+  width: 100%;
+}
+.demo-users {
+  background: #edf2e6;
+  border: 1px solid #d6dfca;
+  border-radius: 12px;
+  padding: 20px;
+  margin-top: 28px;
+  font-size: 13px;
+}
+.demo-users .button {
+  padding: 6px 10px;
+  font-size: 12px;
+  min-height: 36px;
+}
+.demo-users .actions {
+  gap: 6px;
+}
+@media (max-width: 800px) {
+  .login {
+    grid-template-columns: 1fr;
+  }
+  .identity {
+    min-height: 0;
+    padding: 25px;
+    gap: 22px;
+  }
+  .identity h1 {
+    font-size: 33px;
+  }
+  .identity > p,
+  .identity div > p {
+    display: none;
+  }
+  .identity h1 br {
+    display: none;
+  }
+  .identity h1 em {
+    display: block;
+  }
+  .identity img {
+    width: 160px;
+  }
+  .access {
+    padding: 28px 22px;
+  }
+}

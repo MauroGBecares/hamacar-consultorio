@@ -1,0 +1,86 @@
+<hm-resource-feedback
+  [loading]="resource.isLoading()"
+  [error]="resource.error()"
+  (retry)="resource.reload()"
+/>
+@if (data() && !resource.error()) {
+<div class="kpis">
+  <article class="kpi featured">
+    <span>Ingresos confirmados</span><strong>{{ money(income()) }}</strong
+    ><small>Transferencias de {{ month(cycle()) }}</small>
+  </article>
+  <article class="kpi">
+    <span>Por revisar</span><strong>{{ money(pendingAmount()) }}</strong
+    ><small>Transferencias por revisar del mes</small>
+  </article>
+  <article class="kpi">
+    <span>Sin cargar</span><strong>{{ notStarted() }}</strong
+    ><small>Profesionales en este ciclo</small>
+  </article>
+  <article class="kpi">
+    <span>Con pago confirmado</span
+    ><strong>{{ confirmed() }} / {{ session.billingUsers().length }}</strong
+    ><small>Profesionales del equipo</small>
+  </article>
+</div>
+<div class="dashboard-grid">
+  <section class="panel">
+    <h2>Ingresos últimos 6 meses</h2>
+    <p class="muted">Solo transferencias confirmadas · ARS</p>
+    <div class="income-chart" role="group" aria-label="Ingresos confirmados por mes">
+      @for (bar of chart(); track bar.month) {
+      <button
+        class="chart-column"
+        [attr.aria-label]="month(bar.month) + ': ' + money(bar.amount)"
+        [title]="money(bar.amount)"
+        (click)="selectedBar.set(month(bar.month) + ' · ' + money(bar.amount))"
+      >
+        <span class="bar-track"
+          ><i [style.height.%]="Math.max(1, bar.amount / chartMax() * 100)"></i></span
+        ><small>{{ month(bar.month).slice(0, 3) }}</small>
+      </button>
+      }
+    </div>
+    <p class="muted" role="status">
+      {{ selectedBar() || 'Seleccioná una barra para ver el importe.' }}
+    </p>
+  </section>
+  <section class="panel">
+    <h2>Requiere atención</h2>
+    @for (alert of alerts(); track alert.key) {
+    <button class="list-row alert-row" (click)="attention.emit(alert.key)">
+      <strong>{{ alert.count }}</strong><span class="grow">{{ alert.label }}</span><span>›</span>
+    </button>
+    }
+  </section>
+</div>
+<section class="panel">
+  <h2>Detalle de transferencias</h2>
+  <p class="muted">
+    Ingresos del espacio; la facturación a coberturas se consulta en los períodos.
+  </p>
+  <div class="tabs">
+    <button
+      [class.active]="perspective() === 'professional'"
+      (click)="perspective.set('professional')"
+    >
+      Por profesional</button
+    ><button
+      [class.active]="perspective() === 'discipline'"
+      (click)="perspective.set('discipline')"
+    >
+      Por disciplina</button
+    ><button [class.active]="perspective() === 'mode'" (click)="perspective.set('mode')">
+      Por modalidad</button
+    ><button [class.active]="perspective() === 'coverage'" (click)="perspective.set('coverage')">
+      Por cobertura
+    </button>
+  </div>
+  @for (row of breakdown(); track row[0]) {
+  <div class="summary-line"><span>{{ row[0] }}</span><strong>{{ money(row[1]) }}</strong></div>
+  } @empty {
+  <p class="empty">Todavía no hay ingresos confirmados en este mes.</p>
+  }
+</section>
+
+}

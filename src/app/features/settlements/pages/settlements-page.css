@@ -1,0 +1,72 @@
+:host {
+  display: block;
+}
+.owner-select {
+  max-width: 340px;
+  margin-bottom: 24px;
+}
+.finance-hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+  background: #e5eddb;
+  border: 1px solid #d3dfc8;
+  border-radius: 16px;
+  padding: 28px;
+  margin-bottom: 24px;
+}
+.finance-hero h2 {
+  font-size: 36px;
+  color: var(--green);
+}
+.callout {
+  display: block;
+  width: 100%;
+  text-align: left;
+  margin: 18px 0;
+}
+.period-group {
+  padding: 20px 0;
+  border-bottom: 1px solid var(--line);
+}
+.period-group:last-child {
+  border: 0;
+}
+.period-cells {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.period-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 14px;
+  min-width: 150px;
+  flex: 1;
+  background: #fafbf7;
+  text-align: left;
+}
+.amount-column {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+@media (max-width: 700px) {
+  .finance-hero {
+    align-items: flex-start;
+    flex-direction: column;
+    padding: 22px;
+  }
+  .period-cell {
+    min-width: 120px;
+  }
+  .amount-column {
+    font-size: 13px;
+  }
+}

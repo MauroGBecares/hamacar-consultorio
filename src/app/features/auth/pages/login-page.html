@@ -1,0 +1,54 @@
+<main class="login">
+  <section class="identity">
+    <img src="assets/logo-hamacar-white-color.svg" alt="Hamacar" width="230" />
+    <div>
+      <p class="eyebrow">Espacio interdisciplinario</p>
+      <h1>Acompañar<br />cada recorrido.<br /><em>Construir en equipo.</em></h1>
+      <p>Un espacio compartido para registrar, organizar y acompañar.</p>
+    </div>
+    <p>Hamacar · Recorridos</p>
+  </section>
+  <section class="access">
+    <form (ngSubmit)="login()">
+      <p class="eyebrow">Nuestro espacio de trabajo</p>
+      <h2>Bienvenida</h2>
+      <p class="muted">Ingresá para continuar tu recorrido.</p>
+      <label
+        >Correo electrónico<input
+          name="name"
+          type="email"
+          [(ngModel)]="name"
+          autocomplete="username"
+          required /></label
+      ><label
+        >Contraseña
+        <div class="password">
+          <input
+            name="password"
+            [(ngModel)]="password"
+            [type]="showPassword() ? 'text' : 'password'"
+            autocomplete="current-password"
+            required
+          /><button
+            type="button"
+            (click)="showPassword.set(!showPassword())"
+            [attr.aria-label]="showPassword() ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+          >
+            {{ showPassword() ? 'Ocultar' : 'Ver' }}
+          </button>
+        </div></label
+      >
+      @if (error()) {
+      <p class="error" role="alert">{{ error() }}</p>
+      }<button class="button primary submit" [disabled]="pending() || session.busy()">
+        {{ pending() ? 'Ingresando…' : 'Ingresar' }}
+      </button>
+      @if (session.locked()) {
+      <p class="notice">La sesión se bloqueó. Volvé a ingresar con tu cuenta para continuar.</p>
+      }
+      <p class="footer-note">
+        Para obtener acceso o recuperar tu contraseña, contactá a la administradora de Hamacar.
+      </p>
+    </form>
+  </section>
+</main>
