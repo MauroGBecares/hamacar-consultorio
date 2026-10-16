@@ -18,7 +18,7 @@ registerLocaleData(localeAr);
 
 export const appConfig: ApplicationConfig = {
   providers: [
-    // Angular 22 ya es zoneless. Lo explicitamos para documentar la decisión.
+    // Angular 22 ya es zoneless. Lo explicitamos para documentar la decisión..
     provideZonelessChangeDetection(),
     provideHttpClient(),
     provideRouter(
